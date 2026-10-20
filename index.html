@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TradingView</title>
+<style>
+body{font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;padding:24px;background:#131722;color:#d1d4dc}
+p{margin:0 0 16px}
+a{display:block;margin:12px 0;padding:14px;border-radius:10px;background:#2962ff;color:#fff;text-decoration:none;text-align:center;font-weight:600}
+a.s{background:#2a2e39}
+</style>
+</head>
+<body>
+<p id="m">Otwieram TradingView…</p>
+<a id="app" href="https://www.tradingview.com/">Otwórz w aplikacji TradingView</a>
+<a id="web" class="s" href="https://www.tradingview.com/">Otwórz stronę TradingView</a>
+<script>
+// Przekierowanie dla aplikacji „Skanery Claude” (podgląd claude.ai otwiera linki w karcie Chrome, która nie oddaje ich
+// aplikacjom; przekierowanie stąd na intent:// już tak). Prowadzi wyłącznie do TradingView: symbol z parametru s, np. NASDAQ:FTAI.
+(function () {
+  var s = (new URLSearchParams(location.search).get('s') || '').toUpperCase().replace(/[^A-Z0-9:._-]/g, '').slice(0, 40);
+  var q = s ? '?symbol=' + encodeURIComponent(s) : '';
+  var web = 'https://www.tradingview.com/chart/' + q;
+  var android = /Android/i.test(navigator.userAgent);
+  var app = 'intent://www.tradingview.com/chart/' + q + '#Intent;scheme=https;package=com.tradingview.tradingviewapp;S.browser_fallback_url=' + encodeURIComponent(web) + ';end';
+  document.getElementById('web').href = web;
+  var a = document.getElementById('app');
+  if (android) { a.href = app; } else { a.href = web; a.textContent = 'Otwórz TradingView'; }
+  if (s) document.getElementById('m').textContent = 'Otwieram ' + s + ' w TradingView…';
+  location.replace(android ? app : web);
+})();
+</script>
+</body>
+</html>
