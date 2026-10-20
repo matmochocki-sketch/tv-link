@@ -8,4 +8,4 @@ Prowadzi wyłącznie do `www.tradingview.com/chart/?symbol=…` (parametr `s`, n
 
 Skrót na pulpit Androida dla aplikacji „Skanery Claude”: otwiera artefakt w aplikacji Claude (intent z pakietem
 `com.anthropic.claude`), awaryjnie w przeglądarce. Adres artefaktu przychodzi w parametrze `u` (UUID) i nie jest zapisany
-w repozytorium. Konfiguracja: `skanery/?u=<UUID>&konfig=1`.
+w repozytorium. Konfiguracja: `skanery/?k=<UUID>`.

@@ -53,7 +53,9 @@ img{width:72px;height:72px;border-radius:16px}
               set: function (k, v) { try { localStorage.setItem('skanery:' + k, v); } catch (e) {} },
               del: function (k) { try { localStorage.removeItem('skanery:' + k); } catch (e) {} } };
   var wzor = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-  var u = (q.get('u') || '').toLowerCase();
+  // Link konfiguracyjny ma jeden parametr (?k=UUID): czat potrafi zgubić albo zepsuć „&” w adresie.
+  var konfig = q.has('k') || /konfig/.test(location.search);
+  var u = (q.get('k') || q.get('u') || '').toLowerCase();
   if (wzor.test(u)) mem.set('u', u); else u = mem.get('u') || '';
   if (!wzor.test(u)) { $('m').textContent = 'Brak adresu aplikacji'; $('otworz').hidden = true;
     $('info').textContent = 'Otwórz jeszcze raz link konfiguracyjny od Claude’a.'; $('info').hidden = false; return; }
@@ -84,7 +86,7 @@ img{width:72px;height:72px;border-radius:16px}
   $('skrotB').onclick = function () { przygotuj('b'); };
   $('gotowe').onclick = function () { mem.del('wstrzymaj'); location.replace(cel(w)); };
 
-  if (q.has('konfig')) { $('m').textContent = 'Skrót do Skanerów Claude'; $('otworz').hidden = true; $('konfig').hidden = false; return; }
+  if (konfig) { $('m').textContent = 'Skrót do Skanerów Claude'; $('otworz').hidden = true; $('konfig').hidden = false; return; }
   var do_ = Number(mem.get('wstrzymaj') || 0);
   if (do_ > Date.now()) {
     $('m').textContent = 'Teraz dodaj tę stronę do ekranu głównego';
