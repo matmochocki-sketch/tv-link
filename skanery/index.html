@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#11151a">
+<title>Skanery Claude</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="ikona-192.png">
+<style>
+:root{color-scheme:dark}
+body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#11151a;color:#e6e2d8;
+ padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:480px;margin:0 auto;display:grid;gap:14px}
+h1{font-size:22px;margin:8px 0 0}
+h2{font-size:15px;margin:10px 0 0;color:#9aa1a9;text-transform:uppercase;letter-spacing:.06em}
+p{margin:0;color:#c9c5bb}
+a,button{display:block;width:100%;box-sizing:border-box;padding:14px;border-radius:10px;border:0;background:#5eb0e2;color:#0c1a24;
+ font:inherit;font-weight:600;text-align:center;text-decoration:none;cursor:pointer}
+.s{background:#232b34;color:#e6e2d8}
+img{width:72px;height:72px;border-radius:16px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<img src="ikona-192.png" alt="">
+<h1 id="m">Otwieram Skanery Claude…</h1>
+<p id="info" hidden></p>
+<a id="otworz" href="#">Otwórz Skanery w aplikacji Claude</a>
+<section id="konfig" hidden style="display:grid;gap:14px">
+ <h2>Krok 1 — sprawdź, który link działa</h2>
+ <p>Jeśli widzisz tę stronę w karcie otwartej z aplikacji Claude, najpierw ⋮ → „Otwórz w Chrome”. Potem stuknij wariant A.
+  Gdy otworzy się aplikacja Claude z widokiem Skanerów, wróć tutaj. Jeśli nie, spróbuj wariantu B.</p>
+ <a id="testA" href="#">Wariant A</a>
+ <a id="testB" class="s" href="#">Wariant B</a>
+ <h2>Krok 2 — skrót na pulpicie</h2>
+ <p>Stuknij przycisk wariantu, który zadziałał, a potem w Chrome: ⋮ → „Dodaj do ekranu głównego” (albo „Zainstaluj aplikację”).</p>
+ <button id="skrotA">Przygotuj skrót z wariantem A</button>
+ <button id="skrotB" class="s">Przygotuj skrót z wariantem B</button>
+</section>
+<button id="gotowe" class="s" hidden>Skrót dodany — od teraz otwieraj od razu</button>
+</main>
+<script>
+// Skrót na pulpit dla aplikacji „Skanery Claude”: otwiera artefakt w aplikacji Claude na Androidzie (intent z pakietem
+// com.anthropic.claude), a gdy aplikacja go nie przyjmie, w przeglądarce. Adres artefaktu przychodzi w parametrze u
+// (UUID), nie jest zapisany w tym repozytorium.
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var mem = { get: function (k) { try { return localStorage.getItem('skanery:' + k); } catch (e) { return null; } },
+              set: function (k, v) { try { localStorage.setItem('skanery:' + k, v); } catch (e) {} },
+              del: function (k) { try { localStorage.removeItem('skanery:' + k); } catch (e) {} } };
+  var wzor = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  var u = (q.get('u') || '').toLowerCase();
+  if (wzor.test(u)) mem.set('u', u); else u = mem.get('u') || '';
+  if (!wzor.test(u)) { $('m').textContent = 'Brak adresu aplikacji'; $('otworz').hidden = true;
+    $('info').textContent = 'Otwórz jeszcze raz link konfiguracyjny od Claude’a.'; $('info').hidden = false; return; }
+  var w = q.get('w') === 'b' ? 'b' : (q.get('w') === 'a' ? 'a' : (mem.get('w') || 'a'));
+
+  // Krótki identyfikator artefaktu (claude.ai/artifact/…) to UUID zapisany w base58.
+  function krotki(uuid) {
+    var A = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', n = BigInt('0x' + uuid.replace(/-/g, '')), s = '';
+    while (n > 0n) { s = A[Number(n % 58n)] + s; n = n / 58n; }
+    return s;
+  }
+  var sciezka = { a: '/code/artifact/' + u, b: '/artifact/' + krotki(u) };
+  function web(v) { return 'https://claude.ai' + sciezka[v]; }
+  function app(v) {
+    return 'intent://claude.ai' + sciezka[v] + '#Intent;scheme=https;package=com.anthropic.claude;S.browser_fallback_url=' +
+      encodeURIComponent(web(v)) + ';end';
+  }
+  var android = /Android/i.test(navigator.userAgent);
+  function cel(v) { return android ? app(v) : web(v); }
+
+  $('otworz').href = cel(w);
+  $('testA').href = cel('a'); $('testB').href = cel('b');
+  function przygotuj(v) {
+    mem.set('w', v); mem.set('wstrzymaj', String(Date.now() + 10 * 60 * 1000));
+    location.replace(location.pathname + '?u=' + u + '&w=' + v);
+  }
+  $('skrotA').onclick = function () { przygotuj('a'); };
+  $('skrotB').onclick = function () { przygotuj('b'); };
+  $('gotowe').onclick = function () { mem.del('wstrzymaj'); location.replace(cel(w)); };
+
+  if (q.has('konfig')) { $('m').textContent = 'Skrót do Skanerów Claude'; $('otworz').hidden = true; $('konfig').hidden = false; return; }
+  var do_ = Number(mem.get('wstrzymaj') || 0);
+  if (do_ > Date.now()) {
+    $('m').textContent = 'Teraz dodaj tę stronę do ekranu głównego';
+    $('info').textContent = 'Chrome: ⋮ w prawym górnym rogu → „Dodaj do ekranu głównego” (albo „Zainstaluj aplikację”) → Dodaj. ' +
+      'Potem stuknij przycisk poniżej i usuń stary skrót. Przez 10 minut ta strona nie przekierowuje sama.';
+    $('info').hidden = false; $('gotowe').hidden = false; return;
+  }
+  mem.del('wstrzymaj');
+  location.replace(cel(w));
+})();
+</script>
+</body>
+</html>
